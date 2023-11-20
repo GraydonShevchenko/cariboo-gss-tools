@@ -1,81 +1,134 @@
 import pandas as pd
 from arcgis.gis import GIS
 from copy import deepcopy
-gis = GIS("home")
+from datetime import datetime, timedelta
+from argparse import ArgumentParser
+from util.environment import Environment
+import logging
+import trap_config
 
-traps_item = gis.content.get('ecce1f5fcca54365823c6914c3f92fde')
-traps_flayer = traps_item.layers[0]
-traps_fset = traps_flayer.query(where='INCLUDE_COORDINATES=\'NO\'') #querying without any conditions returns all the features
-if len(traps_fset) > 0:
-    grid_list = traps_fset.sdf['MESO_GRID_ID'].tolist()
-    str_list = ','.join([f'\'{a}\'' for a in grid_list])
-    sql = f'MesoCell IN ({str_list})'
-    mesogrid_item = gis.content.get('75e90b00f2034c499a6ca4b55d30aa4c')
-    mesogrid_flayer = mesogrid_item.layers[0]
-    mesogrid_fset = mesogrid_flayer.query(where=sql)
-    overlap_rows = pd.merge(left = traps_fset.sdf, right = mesogrid_fset.sdf, how='inner',
-                       left_on = 'MESO_GRID_ID', right_on='MesoCell')
-    
-    features_for_update = [] #list containing corrected features
-    all_features = traps_fset.features
-    traps_fset.spatial_reference
-    for trap_set in overlap_rows['SET_UNIQUE_ID']:
-        # get the feature to be updated
-        original_feature = [f for f in all_features if f.attributes['SET_UNIQUE_ID'] == trap_set][0]
-        mesogrid_id = original_feature.attributes['MESO_GRID_ID']
-        print(mesogrid_id)
-        feature_to_be_updated = deepcopy(original_feature)
-    
-        matching_row = mesogrid_fset.sdf.where(mesogrid_fset.sdf.MesoCell == mesogrid_id).dropna()
 
-        input_geometry = {'y':float(matching_row['CENTROID_Y']),
-                           'x': float(matching_row['CENTROID_X'])}
-        feature_to_be_updated.geometry = input_geometry
-        
-        features_for_update.append(feature_to_be_updated)
-    
-    traps_flayer.edit_features(updates=features_for_update)
-
-    tbl_trap_check = traps_item.tables[0]
-traps_fset = traps_flayer.query()
-features_for_update = [] #list containing corrected features
-all_features = traps_fset.features
-for trap in traps_fset:
-    unique_id = trap.attributes['SET_UNIQUE_ID']
-    trap_status = trap.attributes['TRAP_STATUS']
-    print(unique_id)
-    trap_check_subset = tbl_trap_check.query(where=f'SET_UNIQUE_ID=\'{unique_id}\'')
-    if len(trap_check_subset) == 0:
-        continue
-    lst_check_nums = trap_check_subset.sdf['TRAP_CHECK_NUMBER'].tolist()
-#     set_id = trap_check_subset.sdf['TRAP_CHECK_NUMBER'].iloc[-1]
-
-    print(lst_check_nums[-1])
-    latest_check = trap_check_subset.sdf.loc[trap_check_subset.sdf['TRAP_CHECK_NUMBER'] == lst_check_nums[-1]]
-    check_status = latest_check.iloc[0]['TRAP_STATUS']
-    if trap_status != check_status:
-        original_feature = [f for f in all_features if f.attributes['SET_UNIQUE_ID'] == unique_id][0]
-        feature_to_be_updated = deepcopy(original_feature)
-        feature_to_be_updated.attributes['TRAP_STATUS'] = check_status
-        features_for_update.append(feature_to_be_updated)
-if features_for_update:
-    traps_flayer.edit_features(updates=features_for_update)
+def run_app():
+    ago_user, ago_pass, logger = get_input_parameters
+    traps = Traps(ago_user=ago_user, ago_pass=ago_pass, logger=logger)
+    traps.shift_traps
 
 
 
-trap_check_fset = tbl_trap_check.query()
-lst_oids = trap_check_fset.sdf['OBJECTID'].tolist()
-attachments_for_update = []
-for oid in lst_oids:
-    lst_attachments = tbl_trap_check.attachments.get_list(oid=oid)
-    if lst_attachments:
-        for attachment in lst_attachments:
-            print(attachment)
-            print(attachment['name'])
-            attachment_update = deepcopy(attachment)
-            print(attachment_update)
-            attachment_update['name'] = 'Test.jpg'
-            print(attachment_update)
-            attachments_for_update.append(attachment_update)
-if attachments_for_update:
-    tbl_trap_check.attachments.edit_features(updates=attachments_for_update)
+def get_input_parameters():
+    """
+    Function:
+        Sets up parameters and the logger object
+    Returns:
+        tuple: user entered parameters required for tool execution
+    """
+    try:
+        parser = ArgumentParser(description='This script is used to update the Traps AGOL feature layer based on information entered in the trap check table')
+        parser.add_argument('ago_user', type=str, help='AGOL Username')
+        parser.add_argument('ago_pass', type=str, help='AGOL Password')
+        parser.add_argument('--log_level', default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+                            help='Log level')
+        parser.add_argument('--log_dir', help='Path to log directory')
+
+        args = parser.parse_args()
+
+        logger = Environment.setup_logger(args)
+
+        return args.ago_user, args.ago_pass, logger
+
+    except Exception as e:
+        logging.error('Unexpected exception. Program terminating: {}'.format(e.message))
+        raise Exception('Errors exist')
+
+
+class Traps:
+    def __init__(self, ago_user, ago_pass, logger) -> None:
+        self.ago_user = ago_user
+        self.ago_pass = ago_pass
+        self.logger = logger
+
+        self.portal_url = trap_config.MAPHUB
+        self.ago_traps = trap_config.TRAPS
+        self.ago_mesogrid = trap_config.MESO_GRID
+
+        self.logger.info('Connecting to map hub')
+        self.gis = GIS(url=self.portal_url, username=self.ago_user, password=self.ago_pass, expiration=9999)
+        self.logger.info('Connection successful')
+
+    def __del__(self) -> None:
+        self.logger.info('Disconnecting from maphub')
+        del self.gis
+
+    def shift_traps(self):
+        self.logger.info('Shifting any traps that indicated the coordinates should not be included')
+        traps_item = self.gis.content.get(self.ago_traps)
+        traps_flayer = traps_item.layers[0]
+        traps_fset = traps_flayer.query(where='INCLUDE_COORDINATES=\'NO\'')
+        if len(traps_fset) > 0:
+            self.logger.info(f'Found {len(traps_fset)} trap(s) that did not include coorindates')
+            grid_list = traps_fset.sdf['MESO_GRID_ID'].tolist()
+            str_list = ','.join([f'\'{a}\'' for a in grid_list])
+            sql = f'MesoCell IN ({str_list})'
+            mesogrid_item = self.gis.content.get(self.ago_mesogrid)
+            mesogrid_flayer = mesogrid_item.layers[0]
+            mesogrid_fset = mesogrid_flayer.query(where=sql)
+            overlap_rows = pd.merge(left = traps_fset.sdf, right = mesogrid_fset.sdf, how='inner',
+                               left_on = 'MESO_GRID_ID', right_on='MesoCell')
+
+            features_for_update = [] #list containing corrected features
+            all_features = traps_fset.features
+            traps_fset.spatial_reference
+            self.logger.info('Updating geometry for traps')
+            for trap_set in overlap_rows['SET_UNIQUE_ID']:
+                # get the feature to be updated
+                original_feature = [f for f in all_features if f.attributes['SET_UNIQUE_ID'] == trap_set][0]
+                mesogrid_id = original_feature.attributes['MESO_GRID_ID']
+                print(mesogrid_id)
+                feature_to_be_updated = deepcopy(original_feature)
+
+                matching_row = mesogrid_fset.sdf.where(mesogrid_fset.sdf.MesoCell == mesogrid_id).dropna()
+
+                input_geometry = {'y':float(matching_row['CENTROID_Y']),
+                                   'x': float(matching_row['CENTROID_X'])}
+                feature_to_be_updated.geometry = input_geometry
+
+                features_for_update.append(feature_to_be_updated)
+
+            if features_for_update:
+                self.logger.info(f'Updating {len(features_for_update)} trap(s)')
+                traps_flayer.edit_features(updates=features_for_update)
+
+
+    def update_trap_status(self) -> None:
+        self.logger.info('Updating traps layer with most recent trap check status')
+        traps_item = self.gis.content.get(self.ago_traps)
+        traps_flayer = traps_item.layers[0]
+        traps_fset = traps_flayer.query()
+        features_for_update = [] #list containing corrected features
+        all_features = traps_fset.features
+        tbl_trap_check = traps_item.tables[0]
+
+
+        for trap in traps_fset:
+            unique_id = trap.attributes['SET_UNIQUE_ID']
+            trap_status = trap.attributes['TRAP_STATUS']
+            print(unique_id)
+            trap_check_subset = tbl_trap_check.query(where=f'SET_UNIQUE_ID=\'{unique_id}\'')
+            if len(trap_check_subset) == 0:
+                continue
+            lst_check_nums = trap_check_subset.sdf['TRAP_CHECK_NUMBER'].tolist()
+
+            latest_check = trap_check_subset.sdf.loc[trap_check_subset.sdf['TRAP_CHECK_NUMBER'] == lst_check_nums[-1]]
+            check_status = latest_check.iloc[0]['TRAP_STATUS']
+            if trap_status != check_status:
+                original_feature = [f for f in all_features if f.attributes['SET_UNIQUE_ID'] == unique_id][0]
+                feature_to_be_updated = deepcopy(original_feature)
+                feature_to_be_updated.attributes['TRAP_STATUS'] = check_status
+                features_for_update.append(feature_to_be_updated)
+        if features_for_update:
+            self.logger.info(f'Updating {len(features_for_update)} trap(s)')
+            traps_flayer.edit_features(updates=features_for_update)
+
+
+if __name__ == '__main__':
+    run_app

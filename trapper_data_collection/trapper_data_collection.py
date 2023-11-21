@@ -1,18 +1,23 @@
+import sys
 import pandas as pd
 from arcgis.gis import GIS
 from copy import deepcopy
 from datetime import datetime, timedelta
 from argparse import ArgumentParser
-from util.environment import Environment
 import logging
+
+from util.environment import Environment
+
 import trap_config
 
 
 def run_app():
-    ago_user, ago_pass, logger = get_input_parameters
+    ago_user, ago_pass, logger = get_input_parameters()
     traps = Traps(ago_user=ago_user, ago_pass=ago_pass, logger=logger)
-    traps.shift_traps
+    traps.shift_traps()
+    traps.update_trap_status()
 
+    del traps
 
 
 def get_input_parameters():
@@ -60,6 +65,12 @@ class Traps:
         del self.gis
 
     def shift_traps(self):
+        """
+        Function:
+            Shifts the trap points in teh AGOL feature layer to the centre of the meso grid if the user indicated to not include coordinates.
+        Returns:
+            None
+        """
         self.logger.info('Shifting any traps that indicated the coordinates should not be included')
         traps_item = self.gis.content.get(self.ago_traps)
         traps_flayer = traps_item.layers[0]
@@ -83,7 +94,6 @@ class Traps:
                 # get the feature to be updated
                 original_feature = [f for f in all_features if f.attributes['SET_UNIQUE_ID'] == trap_set][0]
                 mesogrid_id = original_feature.attributes['MESO_GRID_ID']
-                print(mesogrid_id)
                 feature_to_be_updated = deepcopy(original_feature)
 
                 matching_row = mesogrid_fset.sdf.where(mesogrid_fset.sdf.MesoCell == mesogrid_id).dropna()
@@ -100,6 +110,12 @@ class Traps:
 
 
     def update_trap_status(self) -> None:
+        """
+        Function:
+            Updates the trap status field in the traps feature layer on AGOL based on the trap status in the most recent trap check record
+        Returns:
+            None
+        """
         self.logger.info('Updating traps layer with most recent trap check status')
         traps_item = self.gis.content.get(self.ago_traps)
         traps_flayer = traps_item.layers[0]
@@ -112,7 +128,6 @@ class Traps:
         for trap in traps_fset:
             unique_id = trap.attributes['SET_UNIQUE_ID']
             trap_status = trap.attributes['TRAP_STATUS']
-            print(unique_id)
             trap_check_subset = tbl_trap_check.query(where=f'SET_UNIQUE_ID=\'{unique_id}\'')
             if len(trap_check_subset) == 0:
                 continue
@@ -131,4 +146,4 @@ class Traps:
 
 
 if __name__ == '__main__':
-    run_app
+    run_app()

@@ -1,8 +1,6 @@
 name: Trapper Data Modification
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -31,3 +29,15 @@ jobs:
         . ~/.bashrc
         conda activate trapper_env
         
+    - name: Run script
+      shell: bash
+      env:
+        AGO_USER: ${{secrets.AGO_USER}}
+        AGO_PASS: ${{secrets.AGO_PASS}}
+      run: |
+        # you may have to activate the environment before running the 
+        # python script, and you likley need to say python3 vs just python
+        conda init bash
+        . ~/.bashrc
+        conda activate trapper_env
+        python3 trapper_data_collection/trapper_data_collection.py

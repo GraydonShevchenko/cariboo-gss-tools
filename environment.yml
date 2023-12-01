@@ -1,0 +1,8 @@
+name: trapper_env
+channels:
+  - esri
+  - anaconda
+  - defaults
+dependencies:
+  - python=3.10
+  - arcgis

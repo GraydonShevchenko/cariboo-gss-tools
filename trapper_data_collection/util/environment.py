@@ -12,11 +12,7 @@
 import os
 import sys
 import logging
-import ctypes
-import zipfile
 
-from ctypes import wintypes
-from xml.etree import ElementTree as eT
 from datetime import datetime as dt
 
 
@@ -29,18 +25,6 @@ class Environment:
 
     def __init__(self):
         pass
-
-    # Set up variables for getting UNC paths
-    mpr = ctypes.WinDLL('mpr')
-
-    ERROR_SUCCESS = 0x0000
-    ERROR_MORE_DATA = 0x00EA
-
-    wintypes.LPDWORD = ctypes.POINTER(wintypes.DWORD)
-    mpr.WNetGetConnectionW.restype = wintypes.DWORD
-    mpr.WNetGetConnectionW.argtypes = (wintypes.LPCWSTR,
-                                       wintypes.LPWSTR,
-                                       wintypes.LPDWORD)
 
     @staticmethod
     def setup_logger(args):

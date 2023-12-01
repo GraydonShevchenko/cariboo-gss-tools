@@ -41,7 +41,7 @@ def get_input_parameters():
             ago_pass = trap_config.AGO_PASS
         except:
             ago_user = os.environ['AGO_USER']
-            ago_pass = os.envrion['AGO_PASS']
+            ago_pass = os.environ['AGO_PASS']
 
 
         logger = Environment.setup_logger(args)

@@ -1,8 +1,6 @@
 name: Trapper Data Modification
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -31,3 +29,15 @@ jobs:
         . ~/.bashrc
         conda activate trapper_env
         
+    - name: Run script
+      shell: bash
+      env:
+        USER_NAME: ${{ secrets.USER_NAME }}
+        PASSWORD: ${{secrets.PASSWORD}}
+      run: |
+        # you may have to activate the environment before running the 
+        # python script, and you likley need to say python3 vs just python
+        conda init bash
+        . ~/.bashrc
+        conda activate graydons_env
+        python3 list_agol_hub_content.py

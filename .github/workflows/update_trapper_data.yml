@@ -1,0 +1,33 @@
+name: Trapper Data Modification
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Set up Conda environment
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: trapper_env
+        python-version: 3.9
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        conda env update --file environment.yaml --name trapper_env
+        conda env list
+        conda init bash
+        . ~/.bashrc
+        conda activate trapper_env
+        

@@ -9,7 +9,6 @@
 # Licence:     <your licence>
 # -------------------------------------------------------------------------------
 
-import arcpy
 import os
 import sys
 import logging
@@ -19,30 +18,6 @@ import zipfile
 from ctypes import wintypes
 from xml.etree import ElementTree as eT
 from datetime import datetime as dt
-
-
-class ArcPyLogHandler(logging.StreamHandler):
-    """
-    ------------------------------------------------------------------------------------------------------------
-        CLASS: Handler used to send logging message to the ArcGIS message window if using ArcMap
-    ------------------------------------------------------------------------------------------------------------
-    """
-
-    def emit(self, record):
-        try:
-            msg = record.msg.format(record.args)
-        except:
-            msg = record.msg
-
-        timestamp = dt.now().strftime('%Y-%m-%d %H:%M:%S')
-        if record.levelno == logging.ERROR:
-            arcpy.AddError('{} - {}'.format(timestamp, msg))
-        elif record.levelno == logging.WARNING:
-            arcpy.AddWarning('{} - {}'.format(timestamp, msg))
-        else:
-            arcpy.AddMessage('{} - {}'.format(timestamp, msg))
-
-        super(ArcPyLogHandler, self).emit(record)
 
 
 class Environment:
@@ -106,16 +81,5 @@ class Environment:
             fh.setLevel(args.log_level)
             fh.setFormatter(log_fmt)
             logger.addHandler(fh)
-
-        if os.path.basename(sys.executable).lower() == 'python.exe':
-            arc_env = False
-        else:
-            arc_env = True
-
-        if arc_env:
-            arc_handler = ArcPyLogHandler()
-            arc_handler.setLevel(args.log_level)
-            arc_handler.setFormatter(log_fmt)
-            logger.addHandler(arc_handler)
 
         return logger

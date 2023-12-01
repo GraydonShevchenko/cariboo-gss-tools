@@ -32,12 +32,12 @@ jobs:
     - name: Run script
       shell: bash
       env:
-        USER_NAME: ${{ secrets.USER_NAME }}
-        PASSWORD: ${{secrets.PASSWORD}}
+        AGO_USER: ${{secrets.AGO_USER}}
+        AGO_PASS: ${{secrets.AGO_PASS}}
       run: |
         # you may have to activate the environment before running the 
         # python script, and you likley need to say python3 vs just python
         conda init bash
         . ~/.bashrc
-        conda activate graydons_env
-        python3 list_agol_hub_content.py
+        conda activate trapper_env
+        python3 trapper_data_collection/trapper_data_collection.py

@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import pandas as pd
 from arcgis.gis import GIS
 from copy import deepcopy
@@ -29,17 +29,24 @@ def get_input_parameters():
     """
     try:
         parser = ArgumentParser(description='This script is used to update the Traps AGOL feature layer based on information entered in the trap check table')
-        parser.add_argument('ago_user', type=str, help='AGOL Username')
-        parser.add_argument('ago_pass', type=str, help='AGOL Password')
+        # parser.add_argument('ago_user', nargs='?', type=str, help='AGOL Username')
+        # parser.add_argument('ago_pass', nargs='?', type=str, help='AGOL Password')
         parser.add_argument('--log_level', default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                             help='Log level')
         parser.add_argument('--log_dir', help='Path to log directory')
 
         args = parser.parse_args()
+        try:
+            ago_user = trap_config.AGO_USER
+            ago_pass = trap_config.AGO_PASS
+        except:
+            ago_user = os.environ['AGO_USER']
+            ago_pass = os.envrion['AGO_PASS']
+
 
         logger = Environment.setup_logger(args)
 
-        return args.ago_user, args.ago_pass, logger
+        return ago_user, ago_pass, logger
 
     except Exception as e:
         logging.error('Unexpected exception. Program terminating: {}'.format(e.message))

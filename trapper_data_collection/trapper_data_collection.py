@@ -14,8 +14,8 @@ import trap_config
 def run_app():
     ago_user, ago_pass, logger = get_input_parameters()
     traps = Traps(ago_user=ago_user, ago_pass=ago_pass, logger=logger)
-    # traps.shift_traps()
-    # traps.update_trap_status()
+    traps.shift_traps()
+    traps.update_trap_status()
     traps.rename_attachments()
 
     del traps
@@ -162,7 +162,7 @@ class Traps:
         all_features = traps_fset.features
         features_for_update = []
         lst_oids = traps_fset.sdf['OBJECTID'].tolist()
-        lst_oids = [28]
+
         for oid in lst_oids:
             lst_attachments = traps_flayer.attachments.get_list(oid=oid)
             if lst_attachments:

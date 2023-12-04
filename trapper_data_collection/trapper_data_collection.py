@@ -186,6 +186,8 @@ class Traps:
 
         ago_fset = ago_flayer.query()
         all_features = ago_fset.features
+        if len(all_features) == 0:
+            return
         features_for_update = []
         lst_oids = ago_fset.sdf['OBJECTID'].tolist()
 

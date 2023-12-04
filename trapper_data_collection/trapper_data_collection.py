@@ -191,7 +191,8 @@ class Traps:
             if lst_attachments:
                 original_feature = [f for f in all_features if f.attributes['OBJECTID'] == oid][0]
                 if layer_name == 'trap checks':
-                    unique_id = f'{original_feature.attributes[fld_unique_id].split("_")[0]}_{original_feature["TRAP_CHECK_NUMBER"]}'
+                    unique_id = f'{original_feature.attributes[fld_unique_id].split("_")[0]}_' \
+                                f'{original_feature.attributes["TRAP_CHECK_NUMBER"]}'
                 else:
                     unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1

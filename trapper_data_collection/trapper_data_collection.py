@@ -16,7 +16,7 @@ def run_app():
     traps = Traps(ago_user=ago_user, ago_pass=ago_pass, logger=logger)
     traps.shift_traps()
     traps.update_trap_status()
-    traps.rename_attachments()
+    traps.update_attachments()
 
     del traps
 
@@ -153,43 +153,60 @@ class Traps:
             traps_flayer.edit_features(updates=features_for_update)
 
 
-    def rename_attachments(self) -> None:
-        self.logger.info('Renaming photos on the traps layer')
-        traps_item = self.gis.content.get(self.ago_traps)
-        traps_flayer = traps_item.layers[0]
+    def update_attachments(self) -> None:
+        """
+        Function:
+            Master function to rename attachements for all required layers in arcgis online
+        Returns:
+            None
+        """
+        self.rename_attachments(ago_layer=self.ago_traps, layer_name='traps', fld_unique_id='SET_UNIQUE_ID',
+                                fld_picture='PICUTRE', photo_prefix='trapsetup')
 
-        traps_fset = traps_flayer.query()
-        all_features = traps_fset.features
+        
+
+    def rename_attachments(self, ago_layer, layer_name, fld_unique_id, fld_picture, photo_prefix) -> None:
+        """
+        Function:
+            Function used to rename attachements in arcgis online. It downloads each attachment, renames it according to the photo prefix, and replaces the pre-existing photo in the attachements table.
+        Returns:
+            None
+        """
+        self.logger.info(f'Renaming photos on the {layer_name} layer')
+        ago_item = self.gis.content.get(ago_layer)
+        ago_flayer = ago_item.layers[0]
+
+        ago_fset = ago_flayer.query()
+        all_features = ago_fset.features
         features_for_update = []
-        lst_oids = traps_fset.sdf['OBJECTID'].tolist()
+        lst_oids = ago_fset.sdf['OBJECTID'].tolist()
 
         for oid in lst_oids:
-            lst_attachments = traps_flayer.attachments.get_list(oid=oid)
+            lst_attachments = ago_flayer.attachments.get_list(oid=oid)
             if lst_attachments:
                 original_feature = [f for f in all_features if f.attributes['OBJECTID'] == oid][0]
-                set_unique_id = original_feature.attributes['SET_UNIQUE_ID']
+                unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1
                 lst_photo_names = []
+                if any(item['name'].startswith(photo_prefix) for item in lst_attachments):
+                    break
                 for attach in lst_attachments:
-                    if attach['name'].startswith('trapsetup'):
-                        break
                     attach_name = attach['name']
-                    new_file_name = f'trapsetup_{set_unique_id.lower()}_photo{attach_num}.jpg'
+                    new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.jpg'
                     self.logger.info(f'Renaming {attach_name} to {new_file_name}')
                     attach_id = attach['id']
-                    attach_file = traps_flayer.attachments.download(oid=oid, attachment_id=attach_id)[0]
+                    attach_file = ago_flayer.attachments.download(oid=oid, attachment_id=attach_id)[0]
                     new_attach_file = os.path.join(os.path.dirname(attach_file), new_file_name)
                     os.rename(attach_file, new_attach_file)
-                    traps_flayer.attachments.update(oid=oid, attachment_id=attach_id, file_path=new_attach_file)
+                    ago_flayer.attachments.update(oid=oid, attachment_id=attach_id, file_path=new_attach_file)
                     lst_photo_names.append(new_file_name)
                     attach_num += 1
-        #             os.remove(attach_file)
                 feature_to_be_updated = deepcopy(original_feature)
-                feature_to_be_updated.attributes['PICTURE'] = ','.join(lst_photo_names)
+                feature_to_be_updated.attributes[fld_picture] = ','.join(lst_photo_names)
                 features_for_update.append(feature_to_be_updated)
         if features_for_update:
-            self.logger.info(f'Updating photo names for {len(features_for_update)} trap(s)')
-            traps_flayer.edit_features(updates=features_for_update)
+            self.logger.info(f'Updating photo names for {len(features_for_update)} {layer_name}')
+            ago_flayer.edit_features(updates=features_for_update)
 
 if __name__ == '__main__':
     run_app()

@@ -63,6 +63,7 @@ class Traps:
         self.portal_url = trap_config.MAPHUB
         self.ago_traps = trap_config.TRAPS
         self.ago_mesogrid = trap_config.MESO_GRID
+        self.ago_fisher = trap_config.FISHER
 
         self.logger.info('Connecting to map hub')
         self.gis = GIS(url=self.portal_url, username=self.ago_user, password=self.ago_pass, expiration=9999)
@@ -165,6 +166,8 @@ class Traps:
         
         self.rename_attachments(ago_layer=self.ago_traps, layer_name='trap checks', fld_unique_id='SET_UNIQUE_ID', fld_picture='PICTURE', photo_prefix='trapcheck')
 
+        self.rename_attachments(ago_layer=self.ago_fisher, layer_name='fisher', fld_unique_id='OBJECTID', fld_picture='PICTURE', photo_prefix='fisher')
+
         
 
     def rename_attachments(self, ago_layer, layer_name, fld_unique_id, fld_picture, photo_prefix) -> None:
@@ -193,6 +196,9 @@ class Traps:
                 if layer_name == 'trap checks':
                     unique_id = f'{original_feature.attributes[fld_unique_id].split("_")[0]}_' \
                                 f'{original_feature.attributes["TRAP_CHECK_NUMBER"]}'
+                elif layer_name == 'fisher':
+                    unique_id = f'{original_feature.attributes["OBSERVATION_TYPE"]}_' \
+                                f'{original_feature.attributes["OBJECTID"]}'
                 else:
                     unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1

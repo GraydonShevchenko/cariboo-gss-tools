@@ -156,25 +156,30 @@ class Traps:
     def update_attachments(self) -> None:
         """
         Function:
-            Master function to rename attachements for all required layers in arcgis online
+            Master function to rename attachments for all required layers in arcgis online
         Returns:
             None
         """
         self.rename_attachments(ago_layer=self.ago_traps, layer_name='traps', fld_unique_id='SET_UNIQUE_ID',
                                 fld_picture='PICUTRE', photo_prefix='trapsetup')
+        
+        self.rename_attachments(ago_layer=self.ago, layer_name='trap checks', fld_unique_id='SET_UNIQUE_ID', fld_picture='PICTURE', photo_prefix='trapcheck')
 
         
 
     def rename_attachments(self, ago_layer, layer_name, fld_unique_id, fld_picture, photo_prefix) -> None:
         """
         Function:
-            Function used to rename attachements in arcgis online. It downloads each attachment, renames it according to the photo prefix, and replaces the pre-existing photo in the attachements table.
+            Function used to rename attachments in arcgis online. It downloads each attachment, renames it according to the photo prefix, and replaces the pre-existing photo in the attachments table.
         Returns:
             None
         """
         self.logger.info(f'Renaming photos on the {layer_name} layer')
         ago_item = self.gis.content.get(ago_layer)
-        ago_flayer = ago_item.layers[0]
+        if layer_name != 'trap checks':
+            ago_flayer = ago_item.layers[0]
+        else:
+            ago_flayer = ago_item.tables[0]
 
         ago_fset = ago_flayer.query()
         all_features = ago_fset.features
@@ -185,7 +190,10 @@ class Traps:
             lst_attachments = ago_flayer.attachments.get_list(oid=oid)
             if lst_attachments:
                 original_feature = [f for f in all_features if f.attributes['OBJECTID'] == oid][0]
-                unique_id = original_feature.attributes[fld_unique_id]
+                if layer_name == 'trap checks':
+                    unique_id = f'{original_feature.attributes[fld_unique_id].split("_")[0]}_{original_feature["TRAP_CHECK_NUMBER"]}'
+                else:
+                    unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1
                 lst_photo_names = []
                 if any(item['name'].startswith(photo_prefix) for item in lst_attachments):

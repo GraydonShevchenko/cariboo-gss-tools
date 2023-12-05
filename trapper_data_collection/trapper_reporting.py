@@ -74,6 +74,7 @@ class TrapReport:
         self.ago_fisher = trap_config.FISHER
 
         self.trapper_bucket = 'rcbgss'
+        self.bucket_prefix ='trapper_data_collection'
 
         self.logger.info('Connecting to map hub')
         self.gis = GIS(url=self.portal_url, username=self.ago_user, password=self.ago_pass, expiration=9999)
@@ -110,13 +111,13 @@ class TrapReport:
         lst_pictures = self.list_contents()
 
         self.copy_to_object_storage(ago_layer=self.ago_traps, layer_name='traps', 
-                                    fld_picture='PICTURE', lst_os_pictures=lst_pictures)
+                                    fld_picture='PICTURE', lst_os_pictures=lst_pictures, folder='trap_setup')
         
 
 
         
 
-    def copy_to_object_storage(self, ago_layer, layer_name, fld_picture, lst_os_pictures) -> None:
+    def copy_to_object_storage(self, ago_layer, layer_name, fld_picture, lst_os_pictures, folder) -> None:
         """
         Function:
             Function used to download attachments from arcgis online layers and copy them to object storage.
@@ -152,8 +153,9 @@ class TrapReport:
                         self.logger.info(f'Copying {attach_name} to object storage')
                         attach_id = attach['id']
                         attach_file = ago_flayer.attachments.download(oid=oid, attachment_id=attach_id)[0]
+                        ostore_path = f'{self.bucket_prefix}/{folder}/{attach_name}'
 
-                        self.boto_resource.meta.client.upload_file(attach_file, self.trapper_bucket, attach_name)
+                        self.boto_resource.meta.client.upload_file(attach_file, self.trapper_bucket, ostore_path)
 
 
 

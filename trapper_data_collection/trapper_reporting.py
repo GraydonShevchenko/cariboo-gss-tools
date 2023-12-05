@@ -73,18 +73,17 @@ class TrapReport:
         self.ago_traps = trap_config.TRAPS
         self.ago_fisher = trap_config.FISHER
 
-        self.boto_bucket = 'trapper_data_collection'
+        self.trapper_bucket = 'trapper_data_collection'
 
         self.logger.info('Connecting to map hub')
         self.gis = GIS(url=self.portal_url, username=self.ago_user, password=self.ago_pass, expiration=9999)
         self.logger.info('Connection successful')
 
         self.logger.info('Connecting to object storage')
-        self.boto_session = boto3.session.Session()
-        self.boto_client = self.boto_session.client(service_name='s3', 
-                                                    aws_access_key_id=self.obj_store_user, 
-                                                    aws_secret_access_key=self.obj_store_secret, 
-                                                    endpoint_url=f'https://{self.obj_store_host}')
+        self.boto_resource = boto3.resource(service_name='s3', 
+                                            aws_access_key_id=self.obj_store_user,
+                                            aws_secret_access_key=self.obj_store_secret, 
+                                            endpoint_url=f'https://{self.obj_store_host}')
 
     def __del__(self) -> None:
         self.logger.info('Disconnecting from maphub')
@@ -94,7 +93,7 @@ class TrapReport:
         del self.boto_client
 
     def list_contents(self) -> list:
-        obj_bucket = self.boto_client.Bucket(self.boto_bucket)
+        obj_bucket = self.boto_resource.Bucket(self.trapper_bucket)
         lst_objects = obj_bucket.objects.all()
         self.logger.info(lst_objects)
         return lst_objects

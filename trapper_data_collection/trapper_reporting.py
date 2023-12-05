@@ -17,6 +17,7 @@ def run_app():
     report = TrapReport(ago_user=ago_user, ago_pass=ago_pass, obj_store_user=obj_store_user, 
                        obj_store_secret=obj_store_secret, obj_store_host=obj_store_host, logger=logger)
     
+    report.list_contents()
 
     del report
 
@@ -72,6 +73,8 @@ class TrapReport:
         self.ago_traps = trap_config.TRAPS
         self.ago_fisher = trap_config.FISHER
 
+        self.boto_bucket = 'trapper_data_collection'
+
         self.logger.info('Connecting to map hub')
         self.gis = GIS(url=self.portal_url, username=self.ago_user, password=self.ago_pass, expiration=9999)
         self.logger.info('Connection successful')
@@ -86,6 +89,15 @@ class TrapReport:
     def __del__(self) -> None:
         self.logger.info('Disconnecting from maphub')
         del self.gis
+        self.logger.info('Closing object storage connection')
+        self.boto_client.close()
+        del self.boto_client
+
+    def list_contents(self) -> list:
+        obj_bucket = self.boto_client.Bucket(self.boto_bucket)
+        lst_objects = obj_bucket.objects.all()
+        self.logger.info(lst_objects)
+        return lst_objects
 
     
 if __name__ == '__main__':

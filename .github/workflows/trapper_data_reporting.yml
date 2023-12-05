@@ -2,7 +2,7 @@ name: Trapper Data Reporting
 
 on:
   push:
-    branches: ['trap_reporting']
+    branches: [trap_reporting]
   workflow_dispatch:
 
 jobs:

@@ -17,7 +17,7 @@ def run_app():
     report = TrapReport(ago_user=ago_user, ago_pass=ago_pass, obj_store_user=obj_store_user, 
                        obj_store_secret=obj_store_secret, obj_store_host=obj_store_host, logger=logger)
     
-    report.list_contents()
+    report.download_attachments()
 
     del report
 

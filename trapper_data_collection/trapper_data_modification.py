@@ -162,7 +162,7 @@ class Traps:
             None
         """
         self.rename_attachments(ago_layer=self.ago_traps, layer_name='traps', fld_unique_id='SET_UNIQUE_ID',
-                                fld_picture='PICUTRE', photo_prefix='trapsetup')
+                                fld_picture='PICTURE', photo_prefix='trapsetup')
         
         self.rename_attachments(ago_layer=self.ago_traps, layer_name='trap checks', fld_unique_id='SET_UNIQUE_ID', fld_picture='PICTURE', photo_prefix='trapcheck')
 

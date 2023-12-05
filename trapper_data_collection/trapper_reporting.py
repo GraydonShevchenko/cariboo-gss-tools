@@ -93,7 +93,7 @@ class TrapReport:
 
     def list_contents(self) -> list:
         obj_bucket = self.boto_resource.Bucket(self.trapper_bucket)
-        lst_objects = obj_bucket.objects.all()
+        lst_objects = []
         for obj in obj_bucket.objects.all():
             lst_objects.append(os.path.basename(obj.key))
 

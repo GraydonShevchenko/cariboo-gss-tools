@@ -42,4 +42,4 @@ jobs:
         conda init bash
         . ~/.bashrc
         conda activate trapper_env
-        python3 trapper_data_collection/trapper_data_collection.py
+        python3 trapper_data_collection/trapper_data_modification.py

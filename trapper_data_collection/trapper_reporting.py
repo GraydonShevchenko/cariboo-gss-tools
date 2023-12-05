@@ -89,13 +89,14 @@ class TrapReport:
         self.logger.info('Disconnecting from maphub')
         del self.gis
         self.logger.info('Closing object storage connection')
-        self.boto_client.close()
-        del self.boto_client
+        self.boto_resource.close()
+        del self.boto_resource
 
     def list_contents(self) -> list:
         obj_bucket = self.boto_resource.Bucket(self.trapper_bucket)
         lst_objects = obj_bucket.objects.all()
-        self.logger.info(lst_objects)
+        for obj in lst_objects:
+            self.logger.info(obj.key)
         return lst_objects
 
     

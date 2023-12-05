@@ -73,7 +73,7 @@ class TrapReport:
         self.ago_traps = trap_config.TRAPS
         self.ago_fisher = trap_config.FISHER
 
-        self.trapper_bucket = 'trapper_data_collection'
+        self.trapper_bucket = 'rcbgss'
 
         self.logger.info('Connecting to map hub')
         self.gis = GIS(url=self.portal_url, username=self.ago_user, password=self.ago_pass, expiration=9999)
@@ -89,7 +89,6 @@ class TrapReport:
         self.logger.info('Disconnecting from maphub')
         del self.gis
         self.logger.info('Closing object storage connection')
-        self.boto_resource.close()
         del self.boto_resource
 
     def list_contents(self) -> list:

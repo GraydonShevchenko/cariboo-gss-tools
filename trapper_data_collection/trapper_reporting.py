@@ -113,8 +113,11 @@ class TrapReport:
         self.copy_to_object_storage(ago_layer=self.ago_traps, layer_name='traps', 
                                     fld_picture='PICTURE', lst_os_pictures=lst_pictures, folder='trap_setup')
         
-
-
+        self.copy_to_object_storage(ago_layer=self.ago_traps, layer_name='trap checks', 
+                                    fld_picture='PICTURE', lst_os_pictures=lst_pictures, folder='trap_check')
+        
+        self.copy_to_object_storage(ago_layer=self.ago_fisher, layer_name='fisher', 
+                                    fld_picture='PICTURE', lst_os_pictures=lst_pictures, folder='fisher')
         
 
     def copy_to_object_storage(self, ago_layer, layer_name, fld_picture, lst_os_pictures, folder) -> None:

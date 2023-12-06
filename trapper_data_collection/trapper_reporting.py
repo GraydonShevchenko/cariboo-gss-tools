@@ -1,6 +1,7 @@
 import sys, os
 import pandas as pd
 import boto3
+import openpyxl
 from arcgis.gis import GIS
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -196,10 +197,18 @@ class TrapReport:
         df.drop(drop_columns, axis=1, inplace=True)
         df.to_excel(xl_writer, sheet_name=sheet_name, index=False)
 
-        for column in df:
-            column_length = max(df[column].astype(str).map(len).max(), len(column))
-            col_idx = df.columns.get_loc(column)
-            xl_writer.sheets[sheet_name].set_column(col_idx, col_idx, column_length)
+        ws = xl_writer.sheets[sheet_name]
+
+        for i, width in enumerate(get_col_widths(df)):
+            ws.column_dimensions[openpyxl.utils.cell.get_column_letter(i + 1)].width = width + 2
+
+
+def get_col_widths(dataframe):
+    # First we find the maximum length of the index column
+    idx_max = max([len(str(s)) for s in dataframe.index.values] + [len(str(dataframe.index.name))])
+    # Then, we concatenate this to the max of the lengths of column name and its values for each column, left to right
+
+    return [idx_max] + [max([len(str(s)) for s in dataframe[col].values] + [len(col)]) + 4 for col in dataframe.columns]
 
 if __name__ == '__main__':
     run_app()

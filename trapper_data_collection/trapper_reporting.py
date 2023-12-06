@@ -167,9 +167,11 @@ class TrapReport:
         ago_item = self.gis.content.get(self.ago_traps)
         ago_flayer = ago_item.layers[0]
         ago_fset = ago_flayer.query()
-        xl_report = 'Trapper_Data_Report.xlsx'
+        xl_report = 'trapper_data_report.xlsx'
         with pd.ExcelWriter(xl_report) as xl_writer:
-            ago_fset.sdf.to_excel(xl_writer, sheet_name='traps')
+            trap_df = ago_fset.sdf
+            trap_df.drop(['GlobalID'], axis=1, inplace=True)
+            trap_df.to_excel(xl_writer, sheet_name='traps', index=False)
         
         ostore_path = f'{self.bucket_prefix}/{os.path.basename(xl_report)}'
 

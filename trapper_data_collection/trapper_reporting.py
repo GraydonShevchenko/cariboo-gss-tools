@@ -164,18 +164,42 @@ class TrapReport:
 
     def create_excel(self) -> None:
         self.logger.info('Creating report')
-        ago_item = self.gis.content.get(self.ago_traps)
-        ago_flayer = ago_item.layers[0]
-        ago_fset = ago_flayer.query()
-        xl_report = 'trapper_data_report.xlsx'
-        with pd.ExcelWriter(xl_report, date_format='yyyy-mm-dd') as xl_writer:
-            trap_df = ago_fset.sdf
-            trap_df.drop(['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'], axis=1, inplace=True)
-            trap_df.to_excel(xl_writer, sheet_name='traps', index=False)
         
+        xl_report = 'trapper_data_report.xlsx'
+        with pd.ExcelWriter(xl_report, date_format='yyyy-mm-dd', datetime_format='yyyy-mm-dd') as xl_writer:
+            self.create_sheet(xl_writer=xl_writer, sheet_name='traps', ago_layer=self.ago_traps, 
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'])
+            
+            self.create_sheet(xl_writer=xl_writer, sheet_name='trap checks', ago_layer=self.ago_traps, 
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE', 'TRAPSET_TYPES'])
+            
+            self.create_sheet(xl_writer=xl_writer, sheet_name='fisher', ago_layer=self.ago_fisher, 
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'])
+
         ostore_path = f'{self.bucket_prefix}/{os.path.basename(xl_report)}'
 
+        self.logger.info('Uploading document to object storage')
         self.boto_resource.meta.client.upload_file(xl_report, self.trapper_bucket, ostore_path)
     
+
+    def create_sheet(self, xl_writer, sheet_name, ago_layer, drop_columns) -> None:
+        self.logger.info(f'Generating {sheet_name} sheet')
+        ago_item = self.gis.content.get(ago_layer)
+        if sheet_name != 'trap checks':
+            ago_flayer = ago_item.layers[0]
+        else:
+            ago_flayer = ago_item.tables[0]
+        ago_fset = ago_flayer.query()
+        if len(ago_fset.features) == 0:
+            return
+        df = ago_fset.sdf
+        df.drop(drop_columns, axis=1, inplace=True)
+        df.to_excel(xl_writer, sheet_name=sheet_name, index=False)
+
+        for column in df:
+            column_length = max(df[column].astype(str).map(len).max(), len(column))
+            col_idx = df.columns.get_loc(column)
+            xl_writer.sheets[sheet_name].set_column(col_idx, col_idx, column_length)
+
 if __name__ == '__main__':
     run_app()

@@ -4,6 +4,7 @@ import boto3
 import openpyxl
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
 from arcgis.gis import GIS
 from argparse import ArgumentParser
 import logging
@@ -209,7 +210,7 @@ class TrapReport:
         
         for row in ws.iter_rows():
             for cell in row:
-                cell.style.alignment.wrap_text=True
+                cell.style.alignment = Alignment(wrap_text=True)
 
 
 def get_col_widths(dataframe):

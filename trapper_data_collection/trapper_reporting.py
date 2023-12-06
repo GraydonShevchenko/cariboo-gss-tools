@@ -206,6 +206,10 @@ class TrapReport:
             dim_holder[get_column_letter(col)] = ColumnDimension(ws, min=col, max=col, width=20)
 
             ws.column_dimensions = dim_holder
+        
+        for row in ws.iter_rows():
+            for cell in row:
+                cell.style.alignment.wrap_text=True
 
 
 def get_col_widths(dataframe):

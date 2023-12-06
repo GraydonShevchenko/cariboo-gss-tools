@@ -2,9 +2,9 @@ import sys, os
 import pandas as pd
 import boto3
 import openpyxl
+from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
+from openpyxl.utils import get_column_letter
 from arcgis.gis import GIS
-from copy import deepcopy
-from datetime import datetime, timedelta
 from argparse import ArgumentParser
 import logging
 
@@ -169,13 +169,13 @@ class TrapReport:
         xl_report = 'trapper_data_report.xlsx'
         with pd.ExcelWriter(xl_report, date_format='yyyy-mm-dd', datetime_format='yyyy-mm-dd') as xl_writer:
             self.create_sheet(xl_writer=xl_writer, sheet_name='traps', ago_layer=self.ago_traps, 
-                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'])
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'], date_field='START_DATE')
             
             self.create_sheet(xl_writer=xl_writer, sheet_name='trap checks', ago_layer=self.ago_traps, 
-                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'TRAPSET_TYPES'])
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'TRAPSET_TYPES'], date_field='CHECK_DATE')
             
             self.create_sheet(xl_writer=xl_writer, sheet_name='fisher', ago_layer=self.ago_fisher, 
-                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'])
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'], date_field='OBSERVATION_DATE')
 
         ostore_path = f'{self.bucket_prefix}/{os.path.basename(xl_report)}'
 
@@ -183,7 +183,7 @@ class TrapReport:
         self.boto_resource.meta.client.upload_file(xl_report, self.trapper_bucket, ostore_path)
     
 
-    def create_sheet(self, xl_writer, sheet_name, ago_layer, drop_columns) -> None:
+    def create_sheet(self, xl_writer, sheet_name, ago_layer, drop_columns, date_field) -> None:
         self.logger.info(f'Generating {sheet_name} sheet')
         ago_item = self.gis.content.get(ago_layer)
         if sheet_name != 'trap checks':
@@ -195,12 +195,17 @@ class TrapReport:
             return
         df = ago_fset.sdf
         df.drop(drop_columns, axis=1, inplace=True)
+        df[date_field] = pd.to_datetime(df[date_field]).dt.date
         df.to_excel(xl_writer, sheet_name=sheet_name, index=False)
 
         ws = xl_writer.sheets[sheet_name]
 
-        for i, width in enumerate(get_col_widths(df)):
-            ws.column_dimensions[openpyxl.utils.cell.get_column_letter(i + 1)].width = width + 2
+        dim_holder = DimensionHolder(worksheet=ws)
+
+        for col in range(ws.min_column, ws.max_column + 1):
+            dim_holder[get_column_letter(col)] = ColumnDimension(ws, min=col, max=col, width=20)
+
+            ws.column_dimensions = dim_holder
 
 
 def get_col_widths(dataframe):

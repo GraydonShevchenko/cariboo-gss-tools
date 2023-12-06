@@ -76,7 +76,7 @@ class TrapReport:
         self.ago_traps = trap_config.TRAPS
         self.ago_fisher = trap_config.FISHER
 
-        self.trapper_bucket = 'rcbgss'
+        self.trapper_bucket = trap_config.BUCKET
         self.bucket_prefix ='trapper_data_collection'
 
         self.logger.info('Connecting to map hub')

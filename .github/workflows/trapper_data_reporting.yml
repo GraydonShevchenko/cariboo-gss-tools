@@ -1,6 +1,8 @@
 name: Trapper Data Reporting
 
 on:
+  schedule:
+    - cron: '30 8 * * 6'
   workflow_dispatch:
 
 jobs:

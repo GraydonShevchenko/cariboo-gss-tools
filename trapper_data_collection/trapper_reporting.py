@@ -172,7 +172,7 @@ class TrapReport:
                               drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'])
             
             self.create_sheet(xl_writer=xl_writer, sheet_name='trap checks', ago_layer=self.ago_traps, 
-                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE', 'TRAPSET_TYPES'])
+                              drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'TRAPSET_TYPES'])
             
             self.create_sheet(xl_writer=xl_writer, sheet_name='fisher', ago_layer=self.ago_fisher, 
                               drop_columns=['GlobalID', 'OBJECTID', 'EDIT_DATE', 'CALCULATE_DATE', 'SHAPE'])

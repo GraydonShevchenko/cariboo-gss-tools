@@ -210,7 +210,7 @@ class TrapReport:
         
         for row in ws.iter_rows():
             for cell in row:
-                cell.style.alignment = Alignment(wrap_text=True)
+                cell.alignment = Alignment(wrap_text=True)
 
 
 def get_col_widths(dataframe):

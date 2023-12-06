@@ -18,6 +18,7 @@ def run_app():
                        obj_store_secret=obj_store_secret, obj_store_host=obj_store_host, logger=logger)
     
     report.download_attachments()
+    report.create_excel()
 
     del report
 
@@ -161,7 +162,18 @@ class TrapReport:
                         self.boto_resource.meta.client.upload_file(attach_file, self.trapper_bucket, ostore_path)
 
 
+    def create_excel(self) -> None:
+        self.logger.info('Creating report')
+        ago_item = self.gis.content.get(self.ago_traps)
+        ago_flayer = ago_item.layers[0]
+        ago_fset = ago_flayer.query()
+        xl_report = 'Trapper_Data_Report.xlsx'
+        with pd.ExcelWriter(xl_report) as xl_writer:
+            ago_fset.sdf.to_excel(xl_writer, sheet_name='traps')
+        
+        ostore_path = f'{self.bucket_prefix}/{os.path.basename(xl_report)}'
 
+        self.boto_resource.meta.client.upload_file(xl_report, self.trapper_bucket, ostore_path)
     
 if __name__ == '__main__':
     run_app()

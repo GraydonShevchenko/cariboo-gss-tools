@@ -206,8 +206,12 @@ class Traps:
                     unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1
                 lst_photo_names = []
+                try:
+                    lst_pictures = original_feature.attributes[fld_picture].split(',')
+                except:
+                    lst_pictures = []
                 for attach in lst_attachments:
-                    if attach['name'].startswith(photo_prefix):
+                    if attach['name'].startswith(photo_prefix) and attach['name'] in lst_pictures:
                         continue
                     attach_name = attach['name']
                     new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.jpg'

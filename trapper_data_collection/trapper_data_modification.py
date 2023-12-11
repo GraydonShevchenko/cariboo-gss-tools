@@ -206,9 +206,9 @@ class Traps:
                     unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1
                 lst_photo_names = []
-                if any(item['name'].startswith(photo_prefix) for item in lst_attachments):
-                    break
                 for attach in lst_attachments:
+                    if attach['name'].startswith(photo_prefix):
+                        continue
                     attach_name = attach['name']
                     new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.jpg'
                     self.logger.info(f'Renaming {attach_name} to {new_file_name}')

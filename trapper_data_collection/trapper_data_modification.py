@@ -193,6 +193,7 @@ class Traps:
 
         for oid in lst_oids:
             lst_attachments = ago_flayer.attachments.get_list(oid=oid)
+            self.logger.info(lst_attachments)
             if lst_attachments:
                 original_feature = [f for f in all_features if f.attributes['OBJECTID'] == oid][0]
                 if layer_name == 'trap checks':

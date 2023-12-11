@@ -229,6 +229,7 @@ class Traps:
                     bl_update = True
                     
                 if bl_update:
+                    update_count += 1
                     feature_to_be_updated = deepcopy(original_feature)
                     feature_to_be_updated.attributes[fld_picture] = ','.join(lst_photo_names)
                     features_for_update.append(feature_to_be_updated)

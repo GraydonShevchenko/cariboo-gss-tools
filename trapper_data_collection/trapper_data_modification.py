@@ -218,7 +218,11 @@ class Traps:
                         continue
                     attach_name = attach['name']
                     file_type = attach_name.split('.')[-1]
-                    new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.{file_type}'
+                    if file_type in ['avi', 'mp4']:
+                        type_name = 'video'
+                    else:
+                        type_name = 'photo'
+                    new_file_name = f'{photo_prefix}_{unique_id.lower()}_{type_name}{attach_num}.{file_type}'
                     self.logger.info(f'Renaming {attach_name} to {new_file_name}')
                     attach_id = attach['id']
                     attach_file = ago_flayer.attachments.download(oid=oid, attachment_id=attach_id)[0]
@@ -227,8 +231,9 @@ class Traps:
                     try:
                         ago_flayer.attachments.update(oid=oid, attachment_id=attach_id, file_path=new_attach_file)
                     except:
-                        self.logger.warning('File too big to update, uploading new file')
+                        self.logger.warning('File too big to update, uploading new file and deleting old')
                         ago_flayer.attachments.add(oid=oid, file_path=new_attach_file)
+                        ago_flayer.attachments.delete(oid=oid, attachment_id=attach_id)
                     lst_photo_names.append(new_file_name)
                     attach_num += 1
                     bl_update = True

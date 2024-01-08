@@ -224,7 +224,11 @@ class Traps:
                     attach_file = ago_flayer.attachments.download(oid=oid, attachment_id=attach_id)[0]
                     new_attach_file = os.path.join(os.path.dirname(attach_file), new_file_name)
                     os.rename(attach_file, new_attach_file)
-                    ago_flayer.attachments.update(oid=oid, attachment_id=attach_id, file_path=new_attach_file)
+                    try:
+                        ago_flayer.attachments.update(oid=oid, attachment_id=attach_id, file_path=new_attach_file)
+                    except:
+                        self.logger.warning('File too big to update, uploading new file')
+                        ago_flayer.attachments.add(oid=oid, file_path=new_attach_file)
                     lst_photo_names.append(new_file_name)
                     attach_num += 1
                     bl_update = True

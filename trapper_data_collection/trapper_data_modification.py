@@ -209,7 +209,8 @@ class Traps:
                     break
                 for attach in lst_attachments:
                     attach_name = attach['name']
-                    new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.jpg'
+                    file_type = attach_name.split('.')[-1]
+                    new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.{file_type}'
                     self.logger.info(f'Renaming {attach_name} to {new_file_name}')
                     attach_id = attach['id']
                     attach_file = ago_flayer.attachments.download(oid=oid, attachment_id=attach_id)[0]

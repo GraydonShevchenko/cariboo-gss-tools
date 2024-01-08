@@ -148,7 +148,10 @@ class TrapReport:
             lst_attachments = ago_flayer.attachments.get_list(oid=oid)
             if lst_attachments:
                 original_feature = [f for f in all_features if f.attributes['OBJECTID'] == oid][0]
-                lst_pictures = original_feature.attributes[fld_picture].split(',')
+                try:
+                    lst_pictures = original_feature.attributes[fld_picture].split(',')
+                except:
+                    lst_pictures = []
                 lst_new_pictures = [pic for pic in lst_pictures if pic not in lst_os_pictures]
                 if not lst_new_pictures:
                     continue

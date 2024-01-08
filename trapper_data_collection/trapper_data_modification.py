@@ -190,9 +190,11 @@ class Traps:
             return
         features_for_update = []
         lst_oids = ago_fset.sdf['OBJECTID'].tolist()
+        update_count = 0
 
         for oid in lst_oids:
             lst_attachments = ago_flayer.attachments.get_list(oid=oid)
+            self.logger.debug(lst_attachments)
             if lst_attachments:
                 original_feature = [f for f in all_features if f.attributes['OBJECTID'] == oid][0]
                 if layer_name == 'trap checks':
@@ -205,9 +207,15 @@ class Traps:
                     unique_id = original_feature.attributes[fld_unique_id]
                 attach_num = 1
                 lst_photo_names = []
-                if any(item['name'].startswith(photo_prefix) for item in lst_attachments):
-                    break
+                try:
+                    lst_pictures = original_feature.attributes[fld_picture].split(',')
+                except:
+                    lst_pictures = []
+                bl_update = False
                 for attach in lst_attachments:
+                    if attach['name'].startswith(photo_prefix) and attach['name'] in lst_pictures:
+                        lst_photo_names.append(attach['name'])
+                        continue
                     attach_name = attach['name']
                     file_type = attach_name.split('.')[-1]
                     new_file_name = f'{photo_prefix}_{unique_id.lower()}_photo{attach_num}.{file_type}'
@@ -219,11 +227,15 @@ class Traps:
                     ago_flayer.attachments.update(oid=oid, attachment_id=attach_id, file_path=new_attach_file)
                     lst_photo_names.append(new_file_name)
                     attach_num += 1
-                feature_to_be_updated = deepcopy(original_feature)
-                feature_to_be_updated.attributes[fld_picture] = ','.join(lst_photo_names)
-                features_for_update.append(feature_to_be_updated)
+                    bl_update = True
+                    
+                if bl_update:
+                    update_count += 1
+                    feature_to_be_updated = deepcopy(original_feature)
+                    feature_to_be_updated.attributes[fld_picture] = ','.join(lst_photo_names)
+                    features_for_update.append(feature_to_be_updated)
         if features_for_update:
-            self.logger.info(f'Updating photo names for {len(features_for_update)} {layer_name}')
+            self.logger.info(f'Updating photo names for {update_count} {layer_name}')
             ago_flayer.edit_features(updates=features_for_update)
 
 if __name__ == '__main__':
